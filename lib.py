@@ -10,7 +10,7 @@ import cv2 as cv, numpy as np
 #--------------------------------------
 # variable declarations
 #--------------------------------------
-sift = cv.xfeatures2d.SIFT_create()
+# sift = cv.xfeatures2d.SIFT_create()
 sift_standard = cv.SIFT_create()
 orb = cv.ORB_create()
 bf_matcher = cv.BFMatcher()
