@@ -140,11 +140,16 @@ def findAruco(frame: np.ndarray, marker:np.ndarray):
     #detect markers
     corners, ids, rejected = detector.detectMarkers(frame)
     
-    if ids:
+    if ids is not None:
+        cv.aruco.drawDetectedMarkers(frame, corners, ids)
+        cv.imshow("img", frame)
+        
         pts = corners[0][0]
         cx = int(np.mean(pts[:,0]))
         cy = int(np.mean(pts[:,1]))
         
         print(f"Mittelpunkt: ({cx}, {cy})")
     
-    return cx, cy
+        return cx, cy
+    
+    return None, None

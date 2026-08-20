@@ -2,7 +2,7 @@
 # imports 
 #----------------------------
 import cv2 as cv, numpy as np, time
-from lib import *
+# from lib import find_camera
 # from marker_lib import *
 # from gpiozero import OutputDevice, InputDevice
 
@@ -18,10 +18,21 @@ max_speed, min_speed = 255, -255
 
 sleeptime = 1
 distance_to_target = 20     #distance to target in cm
+aruco_type = cv.aruco.DICT_4X4_50
 
 #----------------------------
 # function declarations
 #----------------------------
+
+#finds a working camera
+def find_camera(max_index = 10):
+    for i in range(0,max_index):
+        cam = cv.VideoCapture(i)
+
+        if cam.isOpened():
+            return i
+        cam.release()
+
 # def measure_distance():
 #     # Send a 10 microseconds pulse to the trigger pin
 #     trigger.on()
@@ -56,14 +67,17 @@ speed_r = 128
 # echo = InputDevice(echo_pin)
 
 #image procession
-cam = cv.VideoCapture(find_camera())
-target_img = cv.imread("target.png")
-target_markers, target_hierarchy = target_init(target_img)
+cam_index = find_camera()
+if cam_index is None: raise RuntimeError("Keine Kamera gefunden")
+cam = cv.VideoCapture(cam_index)
+# target_img = cv.imread("target.png")
+# target_markers, target_hierarchy = target_init(target_img)
 
 #aruco marker
-aruco_dict = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_4X4_50)
+aruco_dict = cv.aruco.getPredefinedDictionary(aruco_type)
 marker = cv.aruco.generateImageMarker(aruco_dict, 0, 1000)
-print(type(marker))
+aruco_dict = cv.aruco.getPredefinedDictionary(aruco_type)
+detector = cv.aruco.ArucoDetector(aruco_dict)
 
 #target coordinates
 cx = None
@@ -84,6 +98,7 @@ screen_right = None
 #----------------------------
 while cam.isOpened():
     ret, frame = cam.read()
+    if not ret: continue
     frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
     #set camera and screen data
@@ -96,23 +111,32 @@ while cam.isOpened():
 
     if ret:
         #Bild binarisieren
-        ret, imgf = cv.threshold(frame_gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
+        # ret, imgf = cv.threshold(frame_gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
 
         #Konturen erkennen
-        contours, hierarchy = cv.findContours(image=imgf, mode=cv.RETR_TREE, method=cv.CHAIN_APPROX_NONE)
+        # contours, hierarchy = cv.findContours(image=imgf, mode=cv.RETR_TREE, method=cv.CHAIN_APPROX_NONE)
 
         #Konturen approximieren
-        if len(contours) > 0:
-            epsilon = 0.01 * cv.arcLength(contours[0], True)
-            approx = cv.approxPolyDP(contours[0], epsilon, True)
+        # if len(contours) > 0:
+        #     epsilon = 0.01 * cv.arcLength(contours[0], True)
+        #     approx = cv.approxPolyDP(contours[0], epsilon, True)
 
         #Koordinaten der Marker finden
-        markers = find_markers(hierarchy[0], contours)
+        # markers = find_markers(hierarchy[0], contours)
 
-        #Aruco in Frame finden
-        cx, cy = findAruco(frame, marker)
+        #Aruco Marker in Frame finden
+        corners, ids, rejected = detector.detectMarkers(frame_gray)
+        if ids is not None:
+            cv.aruco.drawDetectedMarkers(frame, corners, ids)
+            cv.imshow("img", frame)
+            
+            pts = corners[0][0]
+            cx = int(np.mean(pts[:,0]))
+            cy = int(np.mean(pts[:,1]))
+        
+            print(f"Mittelpunkt: ({cx}, {cy})")
 
-        cv.imshow("camera", frame_gray)
+        cv.imshow("camera", frame)
 
         if cv.waitKey(1) & 0xFF == ord('q'):
             break
