@@ -2,8 +2,6 @@
 # imports 
 #----------------------------
 import cv2 as cv, numpy as np, time
-# from lib import find_camera
-# from marker_lib import *
 # from gpiozero import OutputDevice, InputDevice
 
 #----------------------------
@@ -23,10 +21,34 @@ aruco_type = cv.aruco.DICT_4X4_50
 #----------------------------
 # function declarations
 #----------------------------
+class Data():
+    def __init__(self):
+        self.cx: int | None = None
+        self.cy: int | None = None
+        
+        self.base_speed: int = 128
+        self.speed_l: int = self.base_speed
+        self.speed_r: int = self.base_speed
+        self.speed_max: int = 255
+        
+        self.dist: float | None = None
+        self.dist_max: float = 20.0
+        self.dist_factor: int = 5
+        
+        self.screen_mid: int | None = None
+        self.error: float | None = None
+        self.turn_factor: float = 0.3
+
+#----------------------------
+# function declarations
+#----------------------------
+
+#sends speed values to robot
+def sendSpeed(speed_l:int, speed_r:int):pass
 
 #finds a working camera
 def find_camera(max_index = 10):
-    for i in range(0,max_index):
+    for i in range(max_index):
         cam = cv.VideoCapture(i)
 
         if cam.isOpened():
@@ -58,9 +80,6 @@ def find_camera(max_index = 10):
 #----------------------------
 # initializations
 #----------------------------
-#set init speeds
-speed_l = 128
-speed_r = 128
 
 #ultrasonic sensor pins
 # trigger = OutputDevice(trigger_pin)
@@ -70,8 +89,6 @@ speed_r = 128
 cam_index = find_camera()
 if cam_index is None: raise RuntimeError("Keine Kamera gefunden")
 cam = cv.VideoCapture(cam_index)
-# target_img = cv.imread("target.png")
-# target_markers, target_hierarchy = target_init(target_img)
 
 #aruco marker
 aruco_dict = cv.aruco.getPredefinedDictionary(aruco_type)
@@ -79,19 +96,7 @@ marker = cv.aruco.generateImageMarker(aruco_dict, 0, 1000)
 aruco_dict = cv.aruco.getPredefinedDictionary(aruco_type)
 detector = cv.aruco.ArucoDetector(aruco_dict)
 
-#target coordinates
-cx = None
-cy = None
-
-#camera data
-cam_dimensions_written = False
-cam_width = None
-cam_height = None
-
-#screen data
-screen_left = None
-screen_mid = None
-screen_right = None
+state = Data()
 
 #----------------------------
 # while-loop
@@ -102,55 +107,56 @@ while cam.isOpened():
     frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
     #set camera and screen data
-    if cam_dimensions_written == False:
+    if state.screen_mid is None:
         cam_height, cam_width, cam_channels = frame.shape
-        screen_left = cam_width // 3
-        screen_mid = cam_width // 2
-        screen_right = screen_left * 2
-        cam_dimensions_written = True
+        state.screen_mid = cam_width // 2
 
     if ret:
-        #Bild binarisieren
-        # ret, imgf = cv.threshold(frame_gray, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
-
-        #Konturen erkennen
-        # contours, hierarchy = cv.findContours(image=imgf, mode=cv.RETR_TREE, method=cv.CHAIN_APPROX_NONE)
-
-        #Konturen approximieren
-        # if len(contours) > 0:
-        #     epsilon = 0.01 * cv.arcLength(contours[0], True)
-        #     approx = cv.approxPolyDP(contours[0], epsilon, True)
-
-        #Koordinaten der Marker finden
-        # markers = find_markers(hierarchy[0], contours)
-
         #Aruco Marker in Frame finden
         corners, ids, rejected = detector.detectMarkers(frame_gray)
-        if ids is not None:
-            cv.aruco.drawDetectedMarkers(frame, corners, ids)
-            cv.imshow("img", frame)
-            
-            pts = corners[0][0]
-            cx = int(np.mean(pts[:,0]))
-            cy = int(np.mean(pts[:,1]))
+        if ids is None: continue
         
-            print(f"Mittelpunkt: ({cx}, {cy})")
+        cv.aruco.drawDetectedMarkers(frame, corners, ids)
+        cv.imshow("img", frame)
+        
+        pts = corners[0][0]
+        state.cx = int(np.mean(pts[:,0]))
+        state.cy = int(np.mean(pts[:,1]))
+    
+        print(f"Mittelpunkt: ({state.cx}, {state.cy})")
 
         cv.imshow("camera", frame)
 
         if cv.waitKey(1) & 0xFF == ord('q'):
             break
+        
+        #Motorsteuerung
+        if state.cx is not None and state.screen_mid is not None:
+            #Lenkung
+            state.error = state.cx - state.screen_mid
+            turn = state.error * state.turn_factor
+            speed_l = int(state.base_speed + turn)
+            speed_r = int(state.base_speed - turn)
+            
+            state.speed_r = int(np.clip(
+                state.base_speed + state.turn_factor,
+                -state.speed_max,
+                state.speed_max
+            ))
+            state.speed_l = int(np.clip(
+                state.base_speed - state.turn_factor,
+                -state.speed_max,
+                state.speed_max
+            ))
+            
+        #Distanzmessung
+        # TODO: Distanz messen
+        if state.dist is not None and state.error is not None:
+            distance_error = state.dist_max - state.dist
+            forward = state.dist_factor * state.error
+            forward = np.clip(forward, -state.speed_max, state.speed_max)
+            
 
 #end program
 cv.destroyAllWindows()
 cam.release()
-
-'''
-Strategie:
-1. Bild binarisieren (klarer schwarz-weiß Kontrast; vielleicht Otsu)
-2. Konturhierarchien finden
-3. nach Vierecken suchen
-4. gefundene Marker zuordnen
-5. Homographie berechnen
-https://www.instructables.com/Object-Tracking-With-Opencv-and-Python-With-Just-5/
-'''
