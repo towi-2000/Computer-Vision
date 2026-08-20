@@ -3,6 +3,7 @@
 #----------------------------
 import cv2 as cv, numpy as np, time
 from lib import *
+# from marker_lib import *
 # from gpiozero import OutputDevice, InputDevice
 
 #----------------------------
@@ -59,6 +60,11 @@ cam = cv.VideoCapture(find_camera())
 target_img = cv.imread("target.png")
 target_markers, target_hierarchy = target_init(target_img)
 
+#aruco marker
+aruco_dict = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_4X4_50)
+marker = cv.aruco.generateImageMarker(aruco_dict, 0, 1000)
+print(type(marker))
+
 #target coordinates
 cx = None
 cy = None
@@ -103,8 +109,8 @@ while cam.isOpened():
         #Koordinaten der Marker finden
         markers = find_markers(hierarchy[0], contours)
 
-        #Marker von Target dem Frame zuweisen
-        
+        #Aruco in Frame finden
+        cx, cy = findAruco(frame, marker)
 
         cv.imshow("camera", frame_gray)
 

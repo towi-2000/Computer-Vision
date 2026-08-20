@@ -83,7 +83,6 @@ def get_reference_marker_layout(target_gray):
         raise RuntimeError(f"Referenzbild: {len(markers)} statt 4 Marker gefunden oder Zuordnung unsicher")
     return np.float32([m['center'] for m in ordered])
 
-
 def find_target_homography(frame_gray, reference_pts):
     """Sucht die 4 Marker im aktuellen Frame und berechnet die Homographie
     vom Referenzbild-Koordinatensystem in das Kamerabild."""
@@ -95,7 +94,6 @@ def find_target_homography(frame_gray, reference_pts):
     frame_pts = np.float32([m['center'] for m in ordered])
     H = cv.getPerspectiveTransform(reference_pts, frame_pts)
     return H
-
 
 class TargetTracker:
     """Glaettet die per Marker-Erkennung gemessene Zielposition und

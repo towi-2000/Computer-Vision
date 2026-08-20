@@ -10,9 +10,6 @@ import cv2 as cv, numpy as np
 #--------------------------------------
 # variable declarations
 #--------------------------------------
-# sift = cv.xfeatures2d.SIFT_create()
-sift_standard = cv.SIFT_create()
-orb = cv.ORB_create()
 bf_matcher = cv.BFMatcher()
 backSub = cv.createBackgroundSubtractorMOG2()
 kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3, 3))
@@ -20,63 +17,6 @@ kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3, 3))
 #--------------------------------------
 # functions
 #--------------------------------------
-
-#calculate homography with sift
-def sift_calculate_homography(frame_raw: np.ndarray, target_raw: np.ndarray):
-    #source: https://www.geeksforgeeks.org/python/python-opencv-object-tracking-using-homography/
-    result = []
-    frame = cv.cvtColor(frame_raw, cv.COLOR_BGR2GRAY)
-    kp_frame, desc_frame = sift.detectAndCompute(frame, None)
-    target = cv.cvtColor(target_raw, cv.COLOR_BGR2GRAY)
-    h, w = frame.shape
-    kp_target, desc_target = sift.detectAndCompute(target, None)
-
-    index_params = dict(algorithm = 0, trees = 5)
-    search_params = dict()
-
-    flann = cv.FlannBasedMatcher(index_params, search_params)
-    matches = flann.knnMatch(desc_target, desc_frame, k = 2)
-
-    for m, n in matches:
-        if m.distance < 0.6 * n.distance:
-            result.append(m)
-    
-    frame_pts = np.float32([kp_frame[m.trainIdx].pt for m in result]).reshape(-1, 1, 2)
-    target_pts = np.float32([kp_target[m.trainIdx].pt for m in result]).reshape(-1, 1, 2)
-
-    matrix, mask = cv.findHomography(frame_pts, target_pts, cv.RANSAC, 5.0)
-
-    # matches_mask = mask.ravel().tolist()
-
-    pts = np.float32([[0, 0], [0, h], [w, h], [w, 0]]).reshape(-1, 1, 2)
-    dst = cv.perspectiveTransform(pts, matrix)
-
-    homography = cv.polylines(frame, [np.int32(dst)], True, (255, 0, 0), 3)
-
-    return homography
-
-#feature matching with orb
-def orb_feature_matching(frame_raw: np.ndarray, target_raw: np.ndarray):
-    frame = cv.cvtColor(frame_raw, cv.COLOR_BGR2GRAY)
-    target = cv.cvtColor(target_raw, cv.COLOR_BGR2GRAY)
-    kp_frame, des_frame = orb.detectAndCompute(frame, None)
-    kp_target, des_target = orb.detectAndCompute(target, None)
-    h, w = target.shape
-
-    #ratio test
-    matches = bf_matcher.knnMatch(des_frame, des_target, k=2)
-    good = [m for m, n in matches if m.distance < 0.75 * n.distance]
-    if len(good) < 15: return None #at least 15 good matches
-
-    #calculate homography
-    target_pts = np.float32([kp_target[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
-    frame_pts = np.float32([kp_frame[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
-    H, mask = cv.findHomography(target_pts, frame_pts, cv.RANSAC, 5.0)
-    if H is None: return None
-
-    #transform target-corners to frame
-    corners = np.float32([[0, 0], [w, 0], [w, h], [0, h]]).reshape(-1, 1, 2)
-    return cv.perspectiveTransform(corners, H)
 
 #detects objects in a plain image
 def simple_template_matcher(frame_raw: np.ndarray, target_raw: np.ndarray, treshold = 0.6):
@@ -186,6 +126,25 @@ def find_markers(input:list, contours:list):
             continue
 
         cx, cy = M['m10'] / M['m00'], M['m01'] / M['m00']
-        markers.append((cx, cy, M['m00']))
+        corners = approx.reshape(-1, 2)
+        center = np.mean(corners, axis=0)
+        markers.append((cx, cy, M['m00'], center))
     
     return markers
+
+#find aruco markers in image
+def findAruco(frame: np.ndarray, marker:np.ndarray):
+    aruco_dict = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_4X4_50)
+    #generate aruco detector
+    detector = cv.aruco.ArucoDetector(aruco_dict)
+    #detect markers
+    corners, ids, rejected = detector.detectMarkers(frame)
+    
+    if ids:
+        pts = corners[0][0]
+        cx = int(np.mean(pts[:,0]))
+        cy = int(np.mean(pts[:,1]))
+        
+        print(f"Mittelpunkt: ({cx}, {cy})")
+    
+    return cx, cy
