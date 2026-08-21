@@ -74,6 +74,7 @@ class AdaptiveGain:
             self.value *= 0.999
         
         self.value = float(np.clip(self.value, self.min_gain, self.max_gain))
+        self.last_tune = time.time()
         return self.value
 
 class Data:
@@ -171,6 +172,8 @@ turn_gain = AdaptiveGain(start=0.3)
 dist_gain = AdaptiveGain(start=0.5)
 
 uart = serial.Serial("/dev/serial0", 115200, timeout=1) #TX 14, RX 15
+uart.reset_input_buffer()
+uart.reset_output_buffer()
 
 #ultrasonic sensor init
 GPIO.setmode(GPIO.BCM)
