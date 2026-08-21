@@ -109,10 +109,7 @@ class Data:
 
 #sends speed values to robot
 def sendSpeed(speed_l:int, speed_r:int):
-    uart.write((json.dumps({
-        "left":speed_l,
-        "right":speed_r,
-    }) + "\n").encode("utf-8"))
+    uart.write(f"{speed_l},{speed_r}\n".encode("utf-8"))
 
 #finds a working camera
 def find_camera(max_index = 10):
