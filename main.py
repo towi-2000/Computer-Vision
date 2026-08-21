@@ -1,7 +1,7 @@
 #----------------------------
 # imports 
 #----------------------------
-import cv2 as cv, numpy as np, time, RPi.GPIO as GPIO
+import cv2 as cv, numpy as np, time, RPi.GPIO as GPIO, serial, json
 from collections import deque
 # from gpiozero import OutputDevice, InputDevice
 
@@ -107,7 +107,11 @@ class Data:
 #----------------------------
 
 #sends speed values to robot
-def sendSpeed(speed_l:int, speed_r:int):pass
+def sendSpeed(speed_l:int, speed_r:int):
+    uart.write((json.dumps({
+        "left":speed_l,
+        "right":speed_r,
+    }) + "\n").encode("utf-8"))
 
 #finds a working camera
 def find_camera(max_index = 10):
@@ -165,6 +169,8 @@ detector = cv.aruco.ArucoDetector(aruco_dict)
 state = Data()
 turn_gain = AdaptiveGain(start=0.3)
 dist_gain = AdaptiveGain(start=0.5)
+
+uart = serial.Serial("/dev/serial0", 115200, timeout=1) #TX 14, RX 15
 
 #ultrasonic sensor init
 GPIO.setmode(GPIO.BCM)
@@ -245,3 +251,4 @@ while cam.isOpened():
 cv.destroyAllWindows()
 cam.release()
 GPIO.cleanup()
+uart.close()
