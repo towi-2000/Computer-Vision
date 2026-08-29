@@ -245,8 +245,8 @@ while cam.isOpened():
             if abs(turn_error) > 0.4:
                 dist *= 0.3
             
-            speed_r = int(state.applyLimits(dist + turn))
-            speed_l = int(state.applyLimits(dist - turn))
+            speed_r = int(state.applyLimits(dist - turn))
+            speed_l = int(state.applyLimits(dist + turn))
             print((speed_l, speed_r))
 
             # sendSpeed(speed_l, speed_r)
