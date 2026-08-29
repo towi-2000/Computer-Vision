@@ -244,9 +244,12 @@ while cam.isOpened():
             
             speed_r = int(state.applyLimits(dist + turn))
             speed_l = int(state.applyLimits(dist - turn))
+            print((speed_l, speed_r))
 
             sendSpeed(speed_l, speed_r)
-
+            if speed_r > speed_l: print("turning left")
+            if speed_l > speed_r: print("turning right")
+            print((state.cx, state.cy))
 #end program
 cv.destroyAllWindows()
 cam.release()
