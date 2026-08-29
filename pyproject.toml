@@ -1,0 +1,19 @@
+[project]
+name = "computer-vision"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "towi2000", email = "69476612+towi-2000@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "opencv-python>=5.0.0.93",
+]
+
+[project.scripts]
+computer-vision = "computer_vision:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
