@@ -208,7 +208,7 @@ while cam.isOpened():
             continue
         
         cv.aruco.drawDetectedMarkers(frame, corners, ids)
-        cv.imshow("img", frame)
+        # cv.imshow("img", frame)
         
         pts = corners[0][0]
         state.cx = int(np.mean(pts[:,0]))
