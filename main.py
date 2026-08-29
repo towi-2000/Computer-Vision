@@ -169,6 +169,8 @@ state = Data()
 turn_gain = AdaptiveGain(start=0.3)
 dist_gain = AdaptiveGain(start=0.5)
 
+state.dist = 10
+
 # uart = serial.Serial("/dev/serial0", 115200, timeout=1) #TX 14, RX 15
 # uart.reset_input_buffer()
 # uart.reset_output_buffer()
