@@ -168,9 +168,9 @@ state = Data()
 turn_gain = AdaptiveGain(start=0.3)
 dist_gain = AdaptiveGain(start=0.5)
 
-uart = serial.Serial("/dev/serial0", 115200, timeout=1) #TX 14, RX 15
-uart.reset_input_buffer()
-uart.reset_output_buffer()
+# uart = serial.Serial("/dev/serial0", 115200, timeout=1) #TX 14, RX 15
+# uart.reset_input_buffer()
+# uart.reset_output_buffer()
 
 #ultrasonic sensor init
 GPIO.setmode(GPIO.BCM)
@@ -246,7 +246,7 @@ while cam.isOpened():
             speed_l = int(state.applyLimits(dist - turn))
             print((speed_l, speed_r))
 
-            sendSpeed(speed_l, speed_r)
+            # sendSpeed(speed_l, speed_r)
             if speed_r > speed_l: print("turning left")
             if speed_l > speed_r: print("turning right")
             print((state.cx, state.cy))
@@ -254,4 +254,4 @@ while cam.isOpened():
 cv.destroyAllWindows()
 cam.release()
 GPIO.cleanup()
-uart.close()
+# uart.close()
