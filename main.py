@@ -1,9 +1,8 @@
 #----------------------------
 # imports 
 #----------------------------
-import cv2 as cv, numpy as np, time, RPi.GPIO as GPIO, serial, json
+import cv2 as cv, numpy as np, time, RPi.GPIO as GPIO, serial
 from collections import deque
-# from gpiozero import OutputDevice, InputDevice
 
 #----------------------------
 # Variables declaration
@@ -13,7 +12,7 @@ sleeptime = 1
 aruco_type = cv.aruco.DICT_4X4_50
 
 #----------------------------
-# function declarations
+# class declarations
 #----------------------------
 
 class AdaptiveGain:
@@ -109,7 +108,7 @@ class Data:
 
 #sends speed values to robot
 def sendSpeed(speed_l:int, speed_r:int):
-    # uart.write(f"{speed_l},{speed_r}\n".encode("utf-8"))
+    uart.write(f"{speed_l},{speed_r}\n".encode("utf-8"))
     pass
 
 #finds a working camera
@@ -121,6 +120,7 @@ def find_camera(max_index = 10):
             return i
         cam.release()
 
+#measures distance to target
 def measure_distance(timeout_factor:float, trigger:int, echo:int):
     start_time = 0.0
     stop_time = 0.0
@@ -166,14 +166,13 @@ aruco_dict = cv.aruco.getPredefinedDictionary(aruco_type)
 detector = cv.aruco.ArucoDetector(aruco_dict)
 
 state = Data()
+state.dist = 10
 turn_gain = AdaptiveGain(start=0.3)
 dist_gain = AdaptiveGain(start=0.5)
 
-state.dist = 10
-
-# uart = serial.Serial("/dev/serial0", 115200, timeout=1) #TX 14, RX 15
-# uart.reset_input_buffer()
-# uart.reset_output_buffer()
+uart = serial.Serial("/dev/serial0", 115200, timeout=1) #TX 14, RX 15
+uart.reset_input_buffer()
+uart.reset_output_buffer()
 
 #ultrasonic sensor init
 GPIO.setmode(GPIO.BCM)
@@ -247,14 +246,14 @@ while cam.isOpened():
             
             speed_r = int(state.applyLimits(dist - turn))
             speed_l = int(state.applyLimits(dist + turn))
-            print((speed_l, speed_r))
+            # print((speed_l, speed_r))
 
             # sendSpeed(speed_l, speed_r)
-            if speed_r > speed_l: print("turning left")
-            if speed_l > speed_r: print("turning right")
-            print((state.cx, state.cy))
+            # if speed_r > speed_l: print("turning left")
+            # if speed_l > speed_r: print("turning right")
+            # print((state.cx, state.cy))
 #end program
 cv.destroyAllWindows()
 cam.release()
 GPIO.cleanup()
-# uart.close()
+uart.close()
