@@ -199,9 +199,9 @@ uart.reset_input_buffer()
 uart.reset_output_buffer()
 
 #ultrasonic sensor init
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(state.echo, GPIO.IN)
-GPIO.setup(state.trigger, GPIO.OUT)
+# GPIO.setmode(GPIO.BCM)
+# GPIO.setup(state.echo, GPIO.IN)
+# GPIO.setup(state.trigger, GPIO.OUT)
 
 #distance sensor
 sensor = DistanceSensor(echo=state.echo, trigger=state.trigger)
