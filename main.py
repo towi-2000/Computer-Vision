@@ -3,6 +3,7 @@
 #----------------------------
 import cv2 as cv, numpy as np, time, RPi.GPIO as GPIO, serial
 from collections import deque
+from gpiozero import DistanceSensor
 
 #----------------------------
 # Variables declaration
@@ -122,34 +123,56 @@ def find_camera(max_index = 10):
         cam.release()
 
 #measures distance to target
-def measure_distance(timeout_factor:float, trigger:int, echo:int):
-    start_time = 0.0
-    stop_time = 0.0
-    timeout = time.time() + timeout_factor
+# def measure_distance(timeout_factor:float, trigger:int, echo:int):
+#     start_time = 0.0
+#     stop_time = 0.0
+#     timeout = time.time() + timeout_factor
     
-    # Send a 10 microseconds pulse to the trigger pin
+#     # Send a 10 microseconds pulse to the trigger pin
+#     GPIO.output(trigger, True)
+#     time.sleep(0.00001)  # 10 microseconds
+#     GPIO.output(trigger, False)
+    
+#     # Wait until the echo signal starts
+#     while GPIO.input(echo) == 0:
+#         start_time = time.time()
+#         if time.time() > timeout:
+#             return None
+
+#     # Wait until the echo signal ends
+#     while GPIO.input(echo) == 1:
+#         stop_time = time.time()
+#         if time.time() > timeout:
+#             return None
+
+#     # Calculate the duration of the echo signal
+#     elapsed_time = stop_time - start_time
+    
+#     # Convert time to distance
+#     # Speed of sound in air (34300 cm/s) and round trip    
+#     return (elapsed_time * 34300) / 2
+def measure_distance(trigger:int, echo:int, timeout=0.03):
     GPIO.output(trigger, True)
-    time.sleep(0.00001)  # 10 microseconds
+    time.sleep(0.00001)
     GPIO.output(trigger, False)
-    
-    # Wait until the echo signal starts
+
+    start_wait = time.monotonic()
+
     while GPIO.input(echo) == 0:
-        start_time = time.time()
-        if time.time() > timeout:
+        if time.monotonic() - start_wait > timeout:
             return None
 
-    # Wait until the echo signal ends
+    pulse_start = time.monotonic_ns()
+
     while GPIO.input(echo) == 1:
-        stop_time = time.time()
-        if time.time() > timeout:
+        if time.monotonic() - start_wait > timeout:
             return None
 
-    # Calculate the duration of the echo signal
-    elapsed_time = stop_time - start_time
-    
-    # Convert time to distance
-    # Speed of sound in air (34300 cm/s) and round trip    
-    return (elapsed_time * 34300) / 2
+    pulse_end = time.monotonic_ns()
+
+    pulse_time = (pulse_end - pulse_start) / 1e9
+
+    return pulse_time * 34300 / 2
 
 #----------------------------
 # initializations
@@ -179,6 +202,9 @@ uart.reset_output_buffer()
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(state.echo, GPIO.IN)
 GPIO.setup(state.trigger, GPIO.OUT)
+
+#distance sensor
+sensor = DistanceSensor(echo=state.echo, trigger=state.trigger)
 #----------------------------
 # while-loop
 #----------------------------
@@ -189,7 +215,9 @@ while cam.isOpened():
     
     #measure distance
     if time.time() - state.last_measurement > state.measurement_time:
-        distance = measure_distance(state.timeout_factor, state.trigger, state.echo)
+        # distance = measure_distance(state.timeout_factor, state.trigger, state.echo)
+        # distance = measure_distance(state.trigger, state.echo, state.timeout_factor)
+        distance = sensor.distance * 100
         if distance is not None: 
             state.distances.append(distance)
             state.dist = np.median(state.distances)
@@ -230,7 +258,8 @@ while cam.isOpened():
             
             #calculate errors
             turn_error = (state.cx - state.screen_mid) / state.screen_mid
-            dist_error = (state.dist_max - state.dist) / state.dist_max
+            # dist_error = (state.dist_max - state.dist) / state.dist_max
+            dist_error = (state.dist - state.dist_max) / state.dist_max
             
             turn_gain.record(turn_error)
             dist_gain.record(dist_error)
@@ -250,7 +279,7 @@ while cam.isOpened():
             speed_l = int(state.applyLimits(dist + turn))
             # print((speed_l, speed_r))
 
-            # sendSpeed(speed_l, speed_r)
+            sendSpeed(speed_l, speed_r)
             # if speed_r > speed_l: print("turning left")
             # if speed_l > speed_r: print("turning right")
             # print((state.cx, state.cy))
