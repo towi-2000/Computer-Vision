@@ -217,6 +217,7 @@ while cam.isOpened():
         state.cy = int(np.mean(pts[:,1]))
     
         print(f"Mittelpunkt: ({state.cx}, {state.cy})")
+        print(f"Distanz: {state.dist}")
 
         # cv.imshow("camera", frame)
 
