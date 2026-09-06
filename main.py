@@ -108,6 +108,7 @@ class Data:
 
 #sends speed values to robot
 def sendSpeed(speed_l:int, speed_r:int):
+    print(f"left = {speed_l}, right = {speed_r}")
     uart.write(f"{speed_l},{speed_r}\n".encode("utf-8"))
     pass
 
