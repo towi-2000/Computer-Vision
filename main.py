@@ -83,6 +83,8 @@ class Data:
         self.cy: int | None = None
         self.speed_max: int = 255
         self.speed_min: int = 40
+        self.speed_l: int = 0
+        self.speed_r: int = 0
         self.dist: float | None = None
         self.dist_max: float = 20.0
         self.timeout_factor: float = 0.1
@@ -92,6 +94,7 @@ class Data:
         self.echo: int = 23
         self.screen_mid: int | None = None
         self.distances = deque(maxlen=10)
+        self.lost_frames: int = 0
     
     #applies the speed limits
     def applyLimits(self, speed:float):
@@ -135,15 +138,20 @@ def measure_distance(trigger:int, echo:int, timeout=0.03):
             return None
 
     pulse_start = time.monotonic_ns()
+    start = time.monotonic()
 
     while GPIO.input(echo) == 1:
-        if time.monotonic() - start_wait > timeout:
+        if time.monotonic() - start > timeout:
             return None
 
     pulse_end = time.monotonic_ns()
     pulse_time = (pulse_end - pulse_start) / 1e9
     print(f"pulse_time={pulse_time}")
+    if pulse_time > 0.008:
+        return None
+    
     distance = pulse_time * 34300 / 2
+    
     if distance < 2:
         return None
     if distance > 400:
@@ -207,18 +215,28 @@ while cam.isOpened():
     if ret:
         #Aruco Marker in Frame finden
         corners, ids, rejected = detector.detectMarkers(frame_gray)
-        if ids is None: 
-            sendSpeed(0,0)
-            turn_gain.errors.clear()
-            dist_gain.errors.clear()
+        if ids is None:
+            state.lost_frames += 1
+        
+            if state.lost_frames < 10:
+                sendSpeed(state.speed_l, state.speed_r)
+            else:
+                sendSpeed(0,0)
+
             continue
+            
+        state.lost_frames = 0
         
         cv.aruco.drawDetectedMarkers(frame, corners, ids)
         
         pts = corners[0][0]
-        state.cx = int(np.mean(pts[:,0]))
-        state.cy = int(np.mean(pts[:,1]))
-    
+        cx = int(np.mean(pts[:,0]))
+        cy = int(np.mean(pts[:,1]))
+        if cx is not None:
+            state.cx = cx
+        if cy is not None:
+            state.cy = cy
+
         print(f"Mittelpunkt: ({state.cx}, {state.cy})")
         print(f"Distanz: {state.dist}")
 
@@ -232,9 +250,8 @@ while cam.isOpened():
             #calculate errors
             turn_error = (state.cx - state.screen_mid) / state.screen_mid
             dist_error = np.clip(
-                (state.dist - state.dist_max) / state.dist_max,
+                (state.dist - state.dist_max) / 100,
                 -1.0,
-                1.0
             )
             
             turn_gain.record(turn_error)
@@ -253,6 +270,8 @@ while cam.isOpened():
             
             speed_r = int(state.applyLimits(dist - turn))
             speed_l = int(state.applyLimits(dist + turn))
+            state.speed_r = speed_r
+            state.speed_l = speed_l
 
             sendSpeed(speed_l, speed_r)
 #end program
