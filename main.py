@@ -250,8 +250,9 @@ while cam.isOpened():
             #calculate errors
             turn_error = (state.cx - state.screen_mid) / state.screen_mid
             dist_error = np.clip(
-                (state.dist - state.dist_max) / 100,
+                (state.dist - state.dist_max) / state.dist_max,
                 -1.0,
+                1.0
             )
             
             turn_gain.record(turn_error)
