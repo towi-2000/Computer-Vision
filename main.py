@@ -217,7 +217,7 @@ while cam.isOpened():
     
         print(f"Mittelpunkt: ({state.cx}, {state.cy})")
 
-        cv.imshow("camera", frame)
+        # cv.imshow("camera", frame)
 
         if cv.waitKey(1) & 0xFF == ord('q'):
             break
