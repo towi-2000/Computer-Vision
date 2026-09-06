@@ -1,7 +1,7 @@
 #----------------------------
 # imports 
 #----------------------------
-import cv2 as cv, numpy as np, time, serial
+import cv2 as cv, numpy as np, time, serial, RPi.GPIO as GPIO
 from collections import deque
 from gpiozero import DistanceSensor
 
@@ -151,28 +151,28 @@ def find_camera(max_index = 10):
 #     # Convert time to distance
 #     # Speed of sound in air (34300 cm/s) and round trip    
 #     return (elapsed_time * 34300) / 2
-# def measure_distance(trigger:int, echo:int, timeout=0.03):
-#     GPIO.output(trigger, True)
-#     time.sleep(0.00001)
-#     GPIO.output(trigger, False)
+def measure_distance(trigger:int, echo:int, timeout=0.03):
+    GPIO.output(trigger, True)
+    time.sleep(0.00001)
+    GPIO.output(trigger, False)
 
-#     start_wait = time.monotonic()
+    start_wait = time.monotonic()
 
-#     while GPIO.input(echo) == 0:
-#         if time.monotonic() - start_wait > timeout:
-#             return None
+    while GPIO.input(echo) == 0:
+        if time.monotonic() - start_wait > timeout:
+            return None
 
-#     pulse_start = time.monotonic_ns()
+    pulse_start = time.monotonic_ns()
 
-#     while GPIO.input(echo) == 1:
-#         if time.monotonic() - start_wait > timeout:
-#             return None
+    while GPIO.input(echo) == 1:
+        if time.monotonic() - start_wait > timeout:
+            return None
 
-#     pulse_end = time.monotonic_ns()
+    pulse_end = time.monotonic_ns()
 
-#     pulse_time = (pulse_end - pulse_start) / 1e9
+    pulse_time = (pulse_end - pulse_start) / 1e9
 
-#     return pulse_time * 34300 / 2
+    return pulse_time * 34300 / 2
 
 #----------------------------
 # initializations
@@ -204,7 +204,7 @@ uart.reset_output_buffer()
 # GPIO.setup(state.trigger, GPIO.OUT)
 
 #distance sensor
-sensor = DistanceSensor(echo=state.echo, trigger=state.trigger)
+# sensor = DistanceSensor(echo=state.echo, trigger=state.trigger)
 #----------------------------
 # while-loop
 #----------------------------
@@ -216,8 +216,8 @@ while cam.isOpened():
     #measure distance
     if time.time() - state.last_measurement > state.measurement_time:
         # distance = measure_distance(state.timeout_factor, state.trigger, state.echo)
-        # distance = measure_distance(state.trigger, state.echo, state.timeout_factor)
-        distance = sensor.distance * 100
+        distance = measure_distance(state.trigger, state.echo, state.timeout_factor)
+        # distance = sensor.distance * 100
         if distance is not None: 
             state.distances.append(distance)
             state.dist = np.median(state.distances)
@@ -286,5 +286,5 @@ while cam.isOpened():
 #end program
 cv.destroyAllWindows()
 cam.release()
-# GPIO.cleanup()
+GPIO.cleanup()
 uart.close()
