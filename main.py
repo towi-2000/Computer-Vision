@@ -79,13 +79,13 @@ class AdaptiveGain:
 
 class Data:
     def __init__(self):
-        self.cx: int | None = None
-        self.cy: int | None = None
+        self.cx: int = 0
+        self.cy: int = 0
         self.speed_max: int = 255
         self.speed_min: int = 40
         self.speed_l: int = 0
         self.speed_r: int = 0
-        self.dist: float | None = None
+        self.dist: float = 0
         self.dist_max: float = 20.0
         self.timeout_factor: float = 0.1
         self.measurement_time: float = 0.1 #states the time, when to measure
@@ -98,11 +98,11 @@ class Data:
     
     #applies the speed limits
     def applyLimits(self, speed:float):
-        if abs(speed) < self.speed_min:
-            return 0
+        if speed > 0:
+            speed = max(speed, self.speed_min)
 
-        if abs(speed) > self.speed_max:
-            return np.sign(speed) * self.speed_max
+        elif speed < 0:
+            speed = min(speed, -self.speed_min)
         
         return speed
 
@@ -244,9 +244,7 @@ while cam.isOpened():
             break
         
         #Motorsteuerung (P-Regler: output = error * factor)
-        if state.cx is not None and state.screen_mid is not None and state.dist is not None:
-            #Tuning von turn_factor und dist_factor
-            
+        if state.screen_mid is not None:
             #calculate errors
             turn_error = (state.cx - state.screen_mid) / state.screen_mid
             dist_error = np.clip(
@@ -266,8 +264,7 @@ while cam.isOpened():
             curr_dist_gain = dist_gain.maybe_tune()
             dist = dist_error * curr_dist_gain * state.speed_max
             
-            if abs(turn_error) > 0.4:
-                dist *= 0.3
+            dist *= max(0.3, 1.0 - abs(turn_error))
             
             speed_r = int(state.applyLimits(dist - turn))
             speed_l = int(state.applyLimits(dist + turn))
