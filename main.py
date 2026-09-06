@@ -91,7 +91,7 @@ class Data:
         self.trigger: int = 24
         self.echo: int = 23
         self.screen_mid: int | None = None
-        self.distances = deque(maxlen=5)
+        self.distances = deque(maxlen=10)
     
     #applies the speed limits
     def applyLimits(self, speed:float):
@@ -123,34 +123,6 @@ def find_camera(max_index = 10):
         cam.release()
 
 #measures distance to target
-# def measure_distance(timeout_factor:float, trigger:int, echo:int):
-#     start_time = 0.0
-#     stop_time = 0.0
-#     timeout = time.time() + timeout_factor
-    
-#     # Send a 10 microseconds pulse to the trigger pin
-#     GPIO.output(trigger, True)
-#     time.sleep(0.00001)  # 10 microseconds
-#     GPIO.output(trigger, False)
-    
-#     # Wait until the echo signal starts
-#     while GPIO.input(echo) == 0:
-#         start_time = time.time()
-#         if time.time() > timeout:
-#             return None
-
-#     # Wait until the echo signal ends
-#     while GPIO.input(echo) == 1:
-#         stop_time = time.time()
-#         if time.time() > timeout:
-#             return None
-
-#     # Calculate the duration of the echo signal
-#     elapsed_time = stop_time - start_time
-    
-#     # Convert time to distance
-#     # Speed of sound in air (34300 cm/s) and round trip    
-#     return (elapsed_time * 34300) / 2
 def measure_distance(trigger:int, echo:int, timeout=0.03):
     GPIO.output(trigger, True)
     time.sleep(0.00001)
@@ -169,10 +141,14 @@ def measure_distance(trigger:int, echo:int, timeout=0.03):
             return None
 
     pulse_end = time.monotonic_ns()
-
     pulse_time = (pulse_end - pulse_start) / 1e9
-
-    return pulse_time * 34300 / 2
+    print(f"pulse_time={pulse_time}")
+    distance = pulse_time * 34300 / 2
+    if distance < 2:
+        return None
+    if distance > 400:
+        return None
+    return distance
 
 #----------------------------
 # initializations
@@ -199,12 +175,13 @@ uart.reset_input_buffer()
 uart.reset_output_buffer()
 
 #ultrasonic sensor init
+GPIO.setwarnings(False)
+GPIO.cleanup()
+
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(state.echo, GPIO.IN)
 GPIO.setup(state.trigger, GPIO.OUT)
-
-#distance sensor
-# sensor = DistanceSensor(echo=state.echo, trigger=state.trigger)
+time.sleep(0.5)
 #----------------------------
 # while-loop
 #----------------------------
@@ -215,7 +192,6 @@ while cam.isOpened():
     
     #measure distance
     if time.time() - state.last_measurement > state.measurement_time:
-        # distance = measure_distance(state.timeout_factor, state.trigger, state.echo)
         distance = measure_distance(state.trigger, state.echo, state.timeout_factor)
         # distance = sensor.distance * 100
         if distance is not None: 
@@ -238,7 +214,6 @@ while cam.isOpened():
             continue
         
         cv.aruco.drawDetectedMarkers(frame, corners, ids)
-        # cv.imshow("img", frame)
         
         pts = corners[0][0]
         state.cx = int(np.mean(pts[:,0]))
@@ -246,8 +221,6 @@ while cam.isOpened():
     
         print(f"Mittelpunkt: ({state.cx}, {state.cy})")
         print(f"Distanz: {state.dist}")
-
-        # cv.imshow("camera", frame)
 
         if cv.waitKey(1) & 0xFF == ord('q'):
             break
@@ -258,8 +231,11 @@ while cam.isOpened():
             
             #calculate errors
             turn_error = (state.cx - state.screen_mid) / state.screen_mid
-            # dist_error = (state.dist_max - state.dist) / state.dist_max
-            dist_error = (state.dist - state.dist_max) / state.dist_max
+            dist_error = np.clip(
+                (state.dist - state.dist_max) / state.dist_max,
+                -1.0,
+                1.0
+            )
             
             turn_gain.record(turn_error)
             dist_gain.record(dist_error)
@@ -277,12 +253,8 @@ while cam.isOpened():
             
             speed_r = int(state.applyLimits(dist - turn))
             speed_l = int(state.applyLimits(dist + turn))
-            # print((speed_l, speed_r))
 
             sendSpeed(speed_l, speed_r)
-            # if speed_r > speed_l: print("turning left")
-            # if speed_l > speed_r: print("turning right")
-            # print((state.cx, state.cy))
 #end program
 cv.destroyAllWindows()
 cam.release()
