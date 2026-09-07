@@ -187,7 +187,7 @@ def find_camera(max_index = 10):
 #     return distance
 def measure_distance():
     print("Distanzmessung")
-    return sensor.distance * 100
+    return sensor.distance
 
 #----------------------------
 # initializations
