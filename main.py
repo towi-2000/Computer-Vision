@@ -1,7 +1,8 @@
 #----------------------------
 # imports 
 #----------------------------
-import cv2 as cv, numpy as np, time, serial, RPi.GPIO as GPIO
+import cv2 as cv, numpy as np, time, RPi.GPIO as GPIO
+from smbus2 import SMBus
 from collections import deque
 from gpiozero import DistanceSensor
 
@@ -95,6 +96,7 @@ class Data:
         self.screen_mid: int | None = None
         self.distances = deque(maxlen=10)
         self.lost_frames: int = 0
+        self.i2caddress: int = 0x70
     
     #applies the speed limits
     def applyLimits(self, speed:float):
@@ -110,11 +112,36 @@ class Data:
 # function declarations
 #----------------------------
 
-#sends speed values to robot
+#sends speed to motors
+def drive(pwm0: int, pwm1:int, pwm2:int, pwm3:int):
+    add = state.i2caddress
+    i2c.write_byte_data(add, 0x02, pwm0)
+    i2c.write_byte_data(add, 0x03, pwm1)
+    i2c.write_byte_data(add, 0x04, pwm2)
+    i2c.write_byte_data(add, 0x05, pwm3)
+
+#translates speed to PWM
 def sendSpeed(speed_l:int, speed_r:int):
-    print(f"left = {speed_l}, right = {speed_r}")
-    uart.write(f"{speed_l},{speed_r}\n".encode("utf-8"))
-    pass
+    if speed_l >= 0:
+        pwm3 = speed_l  #links vorwärts
+        pwm2 = 0  #links rückwärts
+    else:
+        pwm3 = 0
+        pwm2 = abs(speed_l)
+    
+    if speed_r >= 0:
+        pwm1 = speed_r #rechts vprwärts
+        pwm0 = 0 #rechs rückwärts
+    else:
+        pwm1 = 0
+        pwm0 = abs(speed_r)
+    
+    pwm0 = max(0, min(255, pwm0))
+    pwm1 = max(0, min(255, pwm1))
+    pwm2 = max(0, min(255, pwm2))
+    pwm3 = max(0, min(255, pwm3))
+    
+    drive(pwm0, pwm1, pwm2, pwm3)
 
 #finds a working camera
 def find_camera(max_index = 10):
@@ -178,10 +205,6 @@ state.dist = 10
 turn_gain = AdaptiveGain(start=0.3)
 dist_gain = AdaptiveGain(start=0.5)
 
-uart = serial.Serial("/dev/serial0", 115200, timeout=1) #TX 14, RX 15
-uart.reset_input_buffer()
-uart.reset_output_buffer()
-
 #ultrasonic sensor init
 GPIO.setwarnings(False)
 GPIO.cleanup()
@@ -190,6 +213,12 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup(state.echo, GPIO.IN)
 GPIO.setup(state.trigger, GPIO.OUT)
 time.sleep(0.5)
+
+#motor i2c
+i2c = SMBus(1) #SDA: 2, SCL: 3
+drive(255,0,255,0)
+raise SystemExit
+
 #----------------------------
 # while-loop
 #----------------------------
@@ -230,12 +259,8 @@ while cam.isOpened():
         cv.aruco.drawDetectedMarkers(frame, corners, ids)
         
         pts = corners[0][0]
-        cx = int(np.mean(pts[:,0]))
-        cy = int(np.mean(pts[:,1]))
-        if cx is not None:
-            state.cx = cx
-        if cy is not None:
-            state.cy = cy
+        state.cx = int(np.mean(pts[:,0]))
+        state.cy = int(np.mean(pts[:,1]))
 
         print(f"Mittelpunkt: ({state.cx}, {state.cy})")
         print(f"Distanz: {state.dist}")
@@ -276,4 +301,3 @@ while cam.isOpened():
 cv.destroyAllWindows()
 cam.release()
 GPIO.cleanup()
-uart.close()
