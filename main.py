@@ -4,7 +4,6 @@
 import cv2 as cv, numpy as np, time, RPi.GPIO as GPIO
 from smbus2 import SMBus
 from collections import deque
-from gpiozero import DistanceSensor
 
 #----------------------------
 # Variables declaration
@@ -114,7 +113,7 @@ class Data:
 
 #sends speed to motors
 def drive(pwm0: int, pwm1:int, pwm2:int, pwm3:int):
-    #print("drive")
+    print("drive")
     add = state.i2caddress
     i2c.write_byte_data(add, 0x02, pwm0)
     i2c.write_byte_data(add, 0x03, pwm1)
@@ -185,9 +184,6 @@ def measure_distance(trigger:int, echo:int, timeout=0.03):
     if distance > 400:
         return None
     return distance
-# def measure_distance():
-#     print("Distanzmessung")
-#     return sensor.distance
 
 #----------------------------
 # initializations
@@ -210,7 +206,6 @@ turn_gain = AdaptiveGain(start=0.3)
 dist_gain = AdaptiveGain(start=0.5)
 
 #ultrasonic sensor init
-# sensor = DistanceSensor(echo=state.echo, trigger=state.trigger)
 GPIO.setwarnings(False)
 GPIO.cleanup()
 
@@ -235,7 +230,7 @@ while cam.isOpened():
     #measure distance
     if time.time() - state.last_measurement > state.measurement_time:
         distance = measure_distance(state.trigger, state.echo, state.timeout_factor)
-        print(f"Distanz: {distance}")
+        # print(f"Distanz: {distance}")
         if distance is not None: 
             state.distances.append(distance)
             state.dist = np.median(state.distances)
