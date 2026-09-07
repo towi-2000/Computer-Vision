@@ -2,7 +2,7 @@
 # imports 
 #----------------------------
 import cv2 as cv, numpy as np, time, RPi.GPIO as GPIO
-from smbus2 import SMBus, i2c_msg
+from smbus2 import SMBus
 from collections import deque
 from gpiozero import DistanceSensor
 
@@ -210,14 +210,14 @@ turn_gain = AdaptiveGain(start=0.3)
 dist_gain = AdaptiveGain(start=0.5)
 
 #ultrasonic sensor init
-sensor = DistanceSensor(echo=23, trigger=24)
-GPIO.setwarnings(False)
-GPIO.cleanup()
+sensor = DistanceSensor(echo=state.echo, trigger=state.trigger)
+# GPIO.setwarnings(False)
+# GPIO.cleanup()
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(state.echo, GPIO.IN)
-GPIO.setup(state.trigger, GPIO.OUT)
-time.sleep(0.5)
+# GPIO.setmode(GPIO.BCM)
+# GPIO.setup(state.echo, GPIO.IN)
+# GPIO.setup(state.trigger, GPIO.OUT)
+# time.sleep(0.5)
 
 #motor i2c
 i2c = SMBus(1) #SDA: 3, SCL: 5
@@ -306,4 +306,4 @@ while cam.isOpened():
 drive(0,0,0,0)
 cv.destroyAllWindows()
 cam.release()
-GPIO.cleanup()
+# GPIO.cleanup()
