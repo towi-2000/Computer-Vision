@@ -174,7 +174,7 @@ def measure_distance(trigger:int, echo:int, timeout=0.03):
 
     pulse_end = time.monotonic_ns()
     pulse_time = (pulse_end - pulse_start) / 1e9
-    print(f"pulse_time={pulse_time}")
+    #print(f"pulse_time={pulse_time}")
     if pulse_time > 0.008:
         return None
     
@@ -202,7 +202,7 @@ aruco_dict = cv.aruco.getPredefinedDictionary(aruco_type)
 detector = cv.aruco.ArucoDetector(aruco_dict)
 
 state = Data()
-state.dist = 10
+#state.dist = 10
 turn_gain = AdaptiveGain(start=0.3)
 dist_gain = AdaptiveGain(start=0.5)
 
@@ -267,7 +267,7 @@ while cam.isOpened():
         state.cx = int(np.mean(pts[:,0]))
         state.cy = int(np.mean(pts[:,1]))
 
-        print(f"Mittelpunkt: ({state.cx}, {state.cy})")
+        #print(f"Mittelpunkt: ({state.cx}, {state.cy})")
         print(f"Distanz: {state.dist}")
 
         if cv.waitKey(1) & 0xFF == ord('q'):
@@ -296,14 +296,14 @@ while cam.isOpened():
             
             dist *= max(0.3, 1.0 - abs(turn_error))
             
-            speed_r = int(state.applyLimits(dist + turn))
-            speed_l = int(state.applyLimits(dist - turn))
+            speed_r = int(state.applyLimits(dist - turn))
+            speed_l = int(state.applyLimits(dist + turn))
             state.speed_r = speed_r
             state.speed_l = speed_l
 
             sendSpeed(speed_l, speed_r)
 #end program
-speed(0,0,0,0)
+drive(0,0,0,0)
 cv.destroyAllWindows()
 cam.release()
 GPIO.cleanup()
