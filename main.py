@@ -201,7 +201,6 @@ aruco_dict = cv.aruco.getPredefinedDictionary(aruco_type)
 detector = cv.aruco.ArucoDetector(aruco_dict)
 
 state = Data()
-#state.dist = 10
 turn_gain = AdaptiveGain(start=0.3)
 dist_gain = AdaptiveGain(start=0.5)
 
@@ -216,8 +215,13 @@ time.sleep(0.5)
 
 #motor i2c
 i2c = SMBus(1) #SDA: 3, SCL: 5
-i2c.write_byte_data(0x70, 0x00, 0x01)
-i2c.write_byte_data(0x70, 0xE8, 0xAA)
+while True:
+    try:
+        i2c.write_byte_data(0x70, 0x00, 0x01)
+        i2c.write_byte_data(0x70, 0xE8, 0xAA)
+        break
+    except OSError:
+        time.sleep(1)
 
 #----------------------------
 # while-loop
