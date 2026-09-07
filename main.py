@@ -190,9 +190,7 @@ def measure_distance(trigger:int, echo:int, timeout=0.03):
 #----------------------------
 
 #image procession
-cam_index = find_camera()
-if cam_index is None: raise RuntimeError("Keine Kamera gefunden")
-cam = cv.VideoCapture(cam_index)
+cam = cv.VideoCapture(0)
 
 #aruco marker
 aruco_dict = cv.aruco.getPredefinedDictionary(aruco_type)
