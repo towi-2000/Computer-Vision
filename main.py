@@ -113,7 +113,7 @@ class Data:
 
 #sends speed to motors
 def drive(pwm0: int, pwm1:int, pwm2:int, pwm3:int):
-    print("drive")
+    # print("drive")
     add = state.i2caddress
     i2c.write_byte_data(add, 0x02, pwm0)
     i2c.write_byte_data(add, 0x03, pwm1)
@@ -220,6 +220,8 @@ while True:
         break
     except OSError:
         time.sleep(1)
+
+sendSpeed(150, 150)
 
 #----------------------------
 # while-loop
