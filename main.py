@@ -2,7 +2,7 @@
 # imports 
 #----------------------------
 import cv2 as cv, numpy as np, time, RPi.GPIO as GPIO
-from smbus2 import SMBus
+from smbus2 import SMBus, i2c_msg
 from collections import deque
 from gpiozero import DistanceSensor
 
@@ -114,7 +114,7 @@ class Data:
 
 #sends speed to motors
 def drive(pwm0: int, pwm1:int, pwm2:int, pwm3:int):
-    print("drive")
+    #print("drive")
     add = state.i2caddress
     i2c.write_byte_data(add, 0x02, pwm0)
     i2c.write_byte_data(add, 0x03, pwm1)
@@ -217,12 +217,12 @@ time.sleep(0.5)
 
 #motor i2c
 i2c = SMBus(1) #SDA: 3, SCL: 5
-# i2c.write_byte_data(0x70, 0x00, 0x01)
-# i2c.write_byte_data(0x70, 0xE8, 0xAA)
-drive(255,0,255,0) #vorwärts
-time.sleep(10)
-drive(0,0,0,0)
-raise SystemExit
+i2c.write_byte_data(0x70, 0x00, 0x01)
+i2c.write_byte_data(0x70, 0xE8, 0xAA)
+#drive(255,0,255,0) #vorwärts
+#time.sleep(10)
+#drive(0,0,0,0)
+#raise SystemExit
 
 #----------------------------
 # while-loop
@@ -296,13 +296,14 @@ while cam.isOpened():
             
             dist *= max(0.3, 1.0 - abs(turn_error))
             
-            speed_r = int(state.applyLimits(dist - turn))
-            speed_l = int(state.applyLimits(dist + turn))
+            speed_r = int(state.applyLimits(dist + turn))
+            speed_l = int(state.applyLimits(dist - turn))
             state.speed_r = speed_r
             state.speed_l = speed_l
 
             sendSpeed(speed_l, speed_r)
 #end program
+speed(0,0,0,0)
 cv.destroyAllWindows()
 cam.release()
 GPIO.cleanup()
