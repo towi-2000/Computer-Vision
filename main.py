@@ -215,8 +215,9 @@ GPIO.setup(state.trigger, GPIO.OUT)
 time.sleep(0.5)
 
 #motor i2c
-i2c = SMBus(1) #SDA: 2, SCL: 3
+i2c = SMBus(1) #SDA: 3, SCL: 5
 drive(255,0,255,0)
+time.sleep(10)
 raise SystemExit
 
 #----------------------------
