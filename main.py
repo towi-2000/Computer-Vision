@@ -91,8 +91,8 @@ class Data:
         self.timeout_factor: float = 0.1
         self.measurement_time: float = 0.1 #states the time, when to measure
         self.last_measurement: float = time.time()
-        self.trigger: int = 24
-        self.echo: int = 23
+        self.trigger: int = 24  #18
+        self.echo: int = 23     #16
         self.screen_mid: int | None = None
         self.distances = deque(maxlen=10)
         self.lost_frames: int = 0
