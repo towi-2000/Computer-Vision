@@ -221,6 +221,7 @@ i2c.write_byte_data(0x70, 0x00, 0x01)
 i2c.write_byte_data(0x70, 0xE8, 0xAA)
 drive(255,0,255,0)
 time.sleep(10)
+drive(0,0,0,0)
 raise SystemExit
 
 #----------------------------
