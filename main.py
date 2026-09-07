@@ -114,6 +114,7 @@ class Data:
 
 #sends speed to motors
 def drive(pwm0: int, pwm1:int, pwm2:int, pwm3:int):
+    print("drive")
     add = state.i2caddress
     i2c.write_byte_data(add, 0x02, pwm0)
     i2c.write_byte_data(add, 0x03, pwm1)
@@ -216,6 +217,8 @@ time.sleep(0.5)
 
 #motor i2c
 i2c = SMBus(1) #SDA: 3, SCL: 5
+i2c.write_byte_data(0x70, 0x00, 0x01)
+i2c.write_byte_data(0x70, 0xE8, 0xAA)
 drive(255,0,255,0)
 time.sleep(10)
 raise SystemExit
