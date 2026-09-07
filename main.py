@@ -144,13 +144,19 @@ def sendSpeed(speed_l:int, speed_r:int):
     drive(pwm0, pwm1, pwm2, pwm3)
 
 #finds a working camera
-def find_camera(max_index = 10):
-    for i in range(max_index):
+def find_camera():
+    for i in [0,1]:
         cam = cv.VideoCapture(i)
 
         if cam.isOpened():
-            return i
+            ret, _ =cam.read()
+            
+            if ret:
+                cam.release()
+                return i
+        
         cam.release()
+    return None
 
 #measures distance to target
 def measure_distance(trigger:int, echo:int, timeout=0.03):
@@ -190,7 +196,8 @@ def measure_distance(trigger:int, echo:int, timeout=0.03):
 #----------------------------
 
 #image procession
-cam = cv.VideoCapture(0)
+# cam_index = find_camera()
+cam = cv.VideoCapture(1)
 
 #aruco marker
 aruco_dict = cv.aruco.getPredefinedDictionary(aruco_type)
