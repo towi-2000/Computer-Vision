@@ -185,34 +185,9 @@ def find_camera(max_index = 10):
 #     if distance > 400:
 #         return None
 #     return distance
-def measure_distance(trigger:int, echo:int, timeout=0.03):
+def measure_distance():
     print("Distanzmessung")
-    # set trigger to HIGH
-    GPIO.output(trigger, True)
- 
-    # set trigger after 0.01 ms to LOW
-    time.sleep(0.00001)
-    GPIO.output(trigger, False)
- 
-    startTime = time.time()
-    arrivalTime = time.time()
- 
-    # store startTime
-    while GPIO.input(echo) == 0:
-        startTime = time.time()
- 
-    # store arrivalTime
-    while GPIO.input(echo) == 1:
-        arrivalTime = time.time()
- 
-    # Time difference between start and arrival
-    timeElapsed = arrivalTime - startTime
-    # multiply by the speed of sound (34300 cm/s)
-    # and divide by 2, there and back again
-    distance = (timeElapsed * 34300) / 2
- 
-    return distance
-
+    return sensor.distance * 100
 
 #----------------------------
 # initializations
@@ -235,6 +210,7 @@ turn_gain = AdaptiveGain(start=0.3)
 dist_gain = AdaptiveGain(start=0.5)
 
 #ultrasonic sensor init
+sensor = DistanceSensor(echo=state.echo, trigger=state.echo)
 GPIO.setwarnings(False)
 GPIO.cleanup()
 
@@ -258,7 +234,7 @@ while cam.isOpened():
     
     #measure distance
     if time.time() - state.last_measurement > state.measurement_time:
-        distance = measure_distance(state.trigger, state.echo, state.timeout_factor)
+        distance = measure_distance()
         print(f"Distanz: {distance}")
         if distance is not None: 
             state.distances.append(distance)
