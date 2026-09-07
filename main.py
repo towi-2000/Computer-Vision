@@ -154,40 +154,40 @@ def find_camera(max_index = 10):
         cam.release()
 
 #measures distance to target
-# def measure_distance(trigger:int, echo:int, timeout=0.03):
-#     GPIO.output(trigger, True)
-#     time.sleep(0.00001)
-#     GPIO.output(trigger, False)
+def measure_distance(trigger:int, echo:int, timeout=0.03):
+    GPIO.output(trigger, True)
+    time.sleep(0.00001)
+    GPIO.output(trigger, False)
 
-#     start_wait = time.monotonic()
+    start_wait = time.monotonic()
 
-#     while GPIO.input(echo) == 0:
-#         if time.monotonic() - start_wait > timeout:
-#             return None
+    while GPIO.input(echo) == 0:
+        if time.monotonic() - start_wait > timeout:
+            return None
 
-#     pulse_start = time.monotonic_ns()
-#     start = time.monotonic()
+    pulse_start = time.monotonic_ns()
+    start = time.monotonic()
 
-#     while GPIO.input(echo) == 1:
-#         if time.monotonic() - start > timeout:
-#             return None
+    while GPIO.input(echo) == 1:
+        if time.monotonic() - start > timeout:
+            return None
 
-#     pulse_end = time.monotonic_ns()
-#     pulse_time = (pulse_end - pulse_start) / 1e9
-#     #print(f"pulse_time={pulse_time}")
-#     if pulse_time > 0.008:
-#         return None
+    pulse_end = time.monotonic_ns()
+    pulse_time = (pulse_end - pulse_start) / 1e9
+    #print(f"pulse_time={pulse_time}")
+    if pulse_time > 0.008:
+        return None
     
-#     distance = pulse_time * 34300 / 2
+    distance = pulse_time * 34300 / 2
     
-#     if distance < 2:
-#         return None
-#     if distance > 400:
-#         return None
-#     return distance
-def measure_distance():
-    print("Distanzmessung")
-    return sensor.distance
+    if distance < 2:
+        return None
+    if distance > 400:
+        return None
+    return distance
+# def measure_distance():
+#     print("Distanzmessung")
+#     return sensor.distance
 
 #----------------------------
 # initializations
@@ -210,14 +210,14 @@ turn_gain = AdaptiveGain(start=0.3)
 dist_gain = AdaptiveGain(start=0.5)
 
 #ultrasonic sensor init
-sensor = DistanceSensor(echo=state.echo, trigger=state.trigger)
-# GPIO.setwarnings(False)
-# GPIO.cleanup()
+# sensor = DistanceSensor(echo=state.echo, trigger=state.trigger)
+GPIO.setwarnings(False)
+GPIO.cleanup()
 
-# GPIO.setmode(GPIO.BCM)
-# GPIO.setup(state.echo, GPIO.IN)
-# GPIO.setup(state.trigger, GPIO.OUT)
-# time.sleep(0.5)
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(state.echo, GPIO.IN)
+GPIO.setup(state.trigger, GPIO.OUT)
+time.sleep(0.5)
 
 #motor i2c
 i2c = SMBus(1) #SDA: 3, SCL: 5
@@ -234,7 +234,7 @@ while cam.isOpened():
     
     #measure distance
     if time.time() - state.last_measurement > state.measurement_time:
-        distance = measure_distance()
+        distance = measure_distance(state.trigger, state.echo, state.timeout_factor)
         print(f"Distanz: {distance}")
         if distance is not None: 
             state.distances.append(distance)
@@ -306,4 +306,4 @@ while cam.isOpened():
 drive(0,0,0,0)
 cv.destroyAllWindows()
 cam.release()
-# GPIO.cleanup()
+GPIO.cleanup()
