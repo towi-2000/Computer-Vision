@@ -217,9 +217,9 @@ time.sleep(0.5)
 
 #motor i2c
 i2c = SMBus(1) #SDA: 3, SCL: 5
-i2c.write_byte_data(0x70, 0x00, 0x01)
-i2c.write_byte_data(0x70, 0xE8, 0xAA)
-drive(255,0,255,0)
+# i2c.write_byte_data(0x70, 0x00, 0x01)
+# i2c.write_byte_data(0x70, 0xE8, 0xAA)
+drive(255,0,255,0) #vorwärts
 time.sleep(10)
 drive(0,0,0,0)
 raise SystemExit
