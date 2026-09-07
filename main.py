@@ -210,7 +210,7 @@ turn_gain = AdaptiveGain(start=0.3)
 dist_gain = AdaptiveGain(start=0.5)
 
 #ultrasonic sensor init
-sensor = DistanceSensor(echo=state.echo, trigger=state.echo)
+sensor = DistanceSensor(echo=23, trigger=24)
 GPIO.setwarnings(False)
 GPIO.cleanup()
 
