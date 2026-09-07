@@ -154,37 +154,65 @@ def find_camera(max_index = 10):
         cam.release()
 
 #measures distance to target
+# def measure_distance(trigger:int, echo:int, timeout=0.03):
+#     GPIO.output(trigger, True)
+#     time.sleep(0.00001)
+#     GPIO.output(trigger, False)
+
+#     start_wait = time.monotonic()
+
+#     while GPIO.input(echo) == 0:
+#         if time.monotonic() - start_wait > timeout:
+#             return None
+
+#     pulse_start = time.monotonic_ns()
+#     start = time.monotonic()
+
+#     while GPIO.input(echo) == 1:
+#         if time.monotonic() - start > timeout:
+#             return None
+
+#     pulse_end = time.monotonic_ns()
+#     pulse_time = (pulse_end - pulse_start) / 1e9
+#     #print(f"pulse_time={pulse_time}")
+#     if pulse_time > 0.008:
+#         return None
+    
+#     distance = pulse_time * 34300 / 2
+    
+#     if distance < 2:
+#         return None
+#     if distance > 400:
+#         return None
+#     return distance
 def measure_distance(trigger:int, echo:int, timeout=0.03):
+    print("Distanzmessung")
+    # set trigger to HIGH
     GPIO.output(trigger, True)
+ 
+    # set trigger after 0.01 ms to LOW
     time.sleep(0.00001)
     GPIO.output(trigger, False)
-
-    start_wait = time.monotonic()
-
+ 
+    startTime = time.time()
+    arrivalTime = time.time()
+ 
+    # store startTime
     while GPIO.input(echo) == 0:
-        if time.monotonic() - start_wait > timeout:
-            return None
-
-    pulse_start = time.monotonic_ns()
-    start = time.monotonic()
-
+        startTime = time.time()
+ 
+    # store arrivalTime
     while GPIO.input(echo) == 1:
-        if time.monotonic() - start > timeout:
-            return None
-
-    pulse_end = time.monotonic_ns()
-    pulse_time = (pulse_end - pulse_start) / 1e9
-    #print(f"pulse_time={pulse_time}")
-    if pulse_time > 0.008:
-        return None
-    
-    distance = pulse_time * 34300 / 2
-    
-    if distance < 2:
-        return None
-    if distance > 400:
-        return None
+        arrivalTime = time.time()
+ 
+    # Time difference between start and arrival
+    timeElapsed = arrivalTime - startTime
+    # multiply by the speed of sound (34300 cm/s)
+    # and divide by 2, there and back again
+    distance = (timeElapsed * 34300) / 2
+ 
     return distance
+
 
 #----------------------------
 # initializations
