@@ -268,7 +268,9 @@ while cam.isOpened():
             
         state.lost_frames = 0
         
-        cv.aruco.drawDetectedMarkers(frame, corners, ids)
+        #cv.aruco.drawDetectedMarkers(frame, corners, ids)
+        #cv.circle(frame, (state.cx, state.cy), 5, (0, 0, 255), -1)
+        #cv.imshow("ArUco detection", frame)
         
         pts = corners[0][0]
         state.cx = int(np.mean(pts[:,0]))
